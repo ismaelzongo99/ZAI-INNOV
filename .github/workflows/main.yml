@@ -1,0 +1,44 @@
+name: Build Kivy Android APK
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y python3-pip git zip unzip openjdk-17-jdk
+          pip install --upgrade pip
+          pip install buildozer cython virtualenv
+
+      - name: Initialize Buildozer
+        run: |
+          buildozer init
+          sed -i 's/package.name = myapp/package.name = ZAIInnov/' buildozer.spec
+          sed -i 's/package.domain = org.test/package.domain = org.zaiinnov/' buildozer.spec
+          sed -i 's/source.main = main.py/source.main = main.py/' buildozer.spec
+          sed -i 's/requirements = python3/requirements = python3,kivy,pyttsx3,speechrecognition,reportlab/' buildozer.spec
+
+      - name: Build APK
+        run: |
+          buildozer android debug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ZAIInnov-APK
+          path: bin/*.apk
