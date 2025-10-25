@@ -1,0 +1,9 @@
+kivy
+Kivy-Garden
+pyttsx3
+SpeechRecognition
+reportlab
+requests
+PyPDF2
+pillow
+comtypes
