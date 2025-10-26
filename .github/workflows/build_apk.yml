@@ -27,7 +27,6 @@ jobs:
 
       - name: Initialize Buildozer
         run: |
-          buildozer init
           sed -i 's/package.name = myapp/package.name = ZAIInnov/' buildozer.spec
           sed -i 's/package.domain = org.test/package.domain = org.zaiinnov/' buildozer.spec
           sed -i 's/source.main = main.py/source.main = main.py/' buildozer.spec
