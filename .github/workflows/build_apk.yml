@@ -12,6 +12,9 @@ jobs:
 
     env:
       ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+      ANDROID_HOME: ${{ github.workspace }}/android-sdk
+      ANDROIDSDK: ${{ github.workspace }}/android-sdk
+      PATH: ${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin:${{ github.workspace }}/android-sdk/platform-tools:${{ github.workspace }}/android-sdk/build-tools/34.0.0:${{ env.PATH }}
 
     steps:
       - name: Checkout code
@@ -40,17 +43,19 @@ jobs:
           yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
           $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
-      - name: Symlink Android SDK paths for Buildozer
+      - name: Create symlinks for Buildozer compatibility
         run: |
-          mkdir -p /home/runner/.buildozer/android/platform/android-sdk
+          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/tools/bin
+          ln -s $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
           ln -s $ANDROID_SDK_ROOT/build-tools /home/runner/.buildozer/android/platform/android-sdk/build-tools
           ln -s $ANDROID_SDK_ROOT/platforms /home/runner/.buildozer/android/platform/android-sdk/platforms
           ln -s $ANDROID_SDK_ROOT/platform-tools /home/runner/.buildozer/android/platform/android-sdk/platform-tools
-          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/tools/bin
-          ln -s $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
 
       - name: Build APK with Buildozer
         run: |
+          echo "ANDROIDSDK=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/build-tools/34.0.0:$PATH" >> $GITHUB_ENV
           buildozer -v android debug
 
       - name: Upload APK artifact
