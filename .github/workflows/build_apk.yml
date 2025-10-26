@@ -14,17 +14,14 @@ jobs:
       ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
 
     steps:
-      # 1. Récupérer le code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. Installer Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      # 3. Installer dépendances Python et outils système
       - name: Install dependencies
         run: |
           sudo apt update
@@ -32,7 +29,6 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython virtualenv
 
-      # 4. Installer Android SDK
       - name: Install Android SDK tools
         run: |
           mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
@@ -42,9 +38,8 @@ jobs:
           rm cmdline-tools.zip
           mv cmdline-tools latest
           yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
-          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
-      # 5. Créer les symlinks pour que Buildozer trouve le SDK
       - name: Symlink SDK for Buildozer compatibility
         run: |
           mkdir -p /home/runner/.buildozer/android/platform/android-sdk
@@ -52,12 +47,15 @@ jobs:
           ln -s $ANDROID_SDK_ROOT/platforms /home/runner/.buildozer/android/platform/android-sdk/platforms
           ln -s $ANDROID_SDK_ROOT/platform-tools /home/runner/.buildozer/android/platform/android-sdk/platform-tools
 
-      # 6. Compiler l'APK avec Buildozer
+      - name: Symlink sdkmanager for Buildozer
+        run: |
+          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/tools/bin
+          ln -s $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
+
       - name: Build APK with Buildozer
         run: |
           buildozer -v android debug
 
-      # 7. Upload de l'APK généré
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
