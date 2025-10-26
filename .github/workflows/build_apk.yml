@@ -10,52 +10,48 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    env:
-      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
-
     steps:
+      # 1. Récupérer le code
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 2. Installer Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
+      # 3. Installer les dépendances Python et Buildozer
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3-pip git zip unzip openjdk-17-jdk wget
+          sudo apt install -y python3-pip git zip unzip openjdk-17-jdk
           pip install --upgrade pip
           pip install buildozer cython virtualenv
 
-      - name: Install Android SDK tools
-        run: |
-          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
-          cd $ANDROID_SDK_ROOT/cmdline-tools
-          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-          unzip cmdline-tools.zip
-          rm cmdline-tools.zip
-          mv cmdline-tools latest
-          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
-          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+      # 4. Installer le SDK Android correctement
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 34
+          build-tools: 34.0.0
 
-      - name: Symlink SDK for Buildozer compatibility
-        run: |
-          mkdir -p /home/runner/.buildozer/android/platform/android-sdk
-          ln -s $ANDROID_SDK_ROOT/build-tools /home/runner/.buildozer/android/platform/android-sdk/build-tools
-          ln -s $ANDROID_SDK_ROOT/platforms /home/runner/.buildozer/android/platform/android-sdk/platforms
-          ln -s $ANDROID_SDK_ROOT/platform-tools /home/runner/.buildozer/android/platform/android-sdk/platform-tools
+      # 5. Accepter les licences Android
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses
 
-      - name: Symlink sdkmanager for Buildozer
+      # 6. Définir les variables d'environnement pour Buildozer
+      - name: Set environment variables
         run: |
-          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/tools/bin
-          ln -s $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
+          echo "ANDROIDSDK=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
 
+      # 7. Construire l'APK avec Buildozer
       - name: Build APK with Buildozer
         run: |
           buildozer -v android debug
 
+      # 8. Télécharger l'APK généré comme artefact
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
